@@ -10,7 +10,7 @@ import math
 import sys
 import os
 
-PALETTE = [0x000000, 0xEEEEEE, 0x202840, 0X273E82, 0x0032C4, 0xA9C1FF, 0xA3A3A3, 0x19959C, 0x70C6A9, 0xE9C35B, 0xD38441, 0xD4186C, 0x7E2072, 0x8B4852, 0xFF9798, 0xEDC7B0, 0x19959B]
+PALETTE = [0x000000, 0xEEEEEE, 0x202840, 0X273E82, 0x0032C4, 0xA9C1FF, 0xA3A3A3, 0x19959C, 0x70C6A9, 0xE9C35B, 0xD38441, 0xD4186C, 0x7E2072, 0x8B4852, 0xFF9798, 0xEDC7B0]
 
 class PyxelManager:
 
@@ -669,7 +669,8 @@ class Game:
         self.spider.update(self.player.x, self.player.y, self.player.bullets)
 
     def draw_game(self):
-        pyxel.cls(16)
+        pyxel.cls(6)
+        pyxel.bltm(0, 0, 0, 0, 0, 230, 128, 0)
 
         self.player.draw()
         self.spider.draw()
