@@ -1,7 +1,7 @@
 """
 author : Léo Imbert
 @created : 31/07/2025 10:18
-@updated : 31/07/2025 18:54
+@updated : 31/07/2025 21:49
 """
 
 import random
@@ -668,12 +668,64 @@ class Button:
         if self.__border:
             pyxel.rectb(x, y, self.__width, self.__height, self.__border_color)
 
+class UIBar:
+
+    def __init__(self, x:int, y:int, width:int, height:int, border_color:int, bar_color:int, starting_value:int, max_value:int, relative:bool=True, horizontal:bool=True, regen:bool=False, speed_regen:int=0.5, value_regen:int=1, anchor:int=ANCHOR_TOP_LEFT):
+        self.__x = x
+        self.__y = y
+        self.__width = width
+        self.__height = height
+        self.__border_color = border_color
+        self.__bar_color = bar_color
+
+        self.current_value = starting_value
+        self.__max_value = max_value
+        self.__relative = relative
+        self.__horizontal = horizontal
+
+        self.__regen = regen
+        self.__speed_regen = speed_regen
+        self.__regen_timer = 0
+        self.__value_regen = value_regen
+        self.__bar_width = 0
+        self.__bar_height = 0
+
+        self.__x, self.__y = get_anchored_position(self.__x, self.__y, self.__width + 2, self.__height + 2, anchor)
+
+    def update(self):
+        self.__regen_timer += 1
+        if self.current_value < 0:
+            self.current_value = 0
+        if self.current_value < self.__max_value and self.__regen and self.__regen_timer >= self.__speed_regen:
+            self.__regen_timer = 0
+            self.current_value += self.__value_regen
+        while self.current_value > self.__max_value:
+            self.current_value -= 1
+        self.__bar_width = self.__width * self.current_value / self.__max_value
+        self.__bar_height = self.__height * self.current_value / self.__max_value
+
+    def draw(self, camera_x:int=0, camera_y:int=0):
+        if self.__relative:
+            if self.__horizontal:
+                pyxel.rect(camera_x + self.__x + 1, camera_y + self.__y + 1, self.__bar_width, self.__height, self.__bar_color)
+                pyxel.rectb(camera_x + self.__x, camera_y + self.__y, self.__width + 2, self.__height + 2, self.__border_color)
+            else:
+                pyxel.rect(camera_x + self.__x + 1, camera_y + self.__y + self.__height - self.__bar_height + 1, self.__width, self.__bar_height, self.__bar_color)
+                pyxel.rectb(camera_x + self.__x, camera_y + self.__y, self.__width + 2, self.__height + 2, self.__border_color)
+        else:
+            if self.__horizontal:
+                pyxel.rect(self.__x + 1, self.__y + 1, self.__bar_width, self.__height, self.__bar_color)
+                pyxel.rectb(self.__x, self.__y, self.__width + 2, self.__height + 2, self.__border_color)
+            else:
+                pyxel.rect(self.__x + 1, self.__y + self.__height - self.__bar_height + 1, self.__width, self.__bar_height, self.__bar_color)
+                pyxel.rectb(self.__x, self.__y, self.__width + 2, self.__height + 2, self.__border_color)
+
 class Bullet:
 
     def __init__(self, x:int, y:int, tx:int, ty:int):
         self.x, self.y = x, y
         self.w, self.h = 6, 6
-        self.speed = 1
+        self.speed = 1.5
         self.lifetime = 500
         self.dither = 1
 
@@ -726,7 +778,11 @@ class Player:
         self.walk = Animation(Sprite(0, 0, 32, 16, 16, 14), 2, 10, True)
         self.current_animation = self.idle
 
+        self.health_bar = UIBar(2, 2, 20, 4, 0, 11, 100, 100)
+
         self.facing_right = True
+        self.dead = False
+        self.hit = False
 
     def update_velocity_x(self):
         if self.vx != 0:
@@ -749,9 +805,31 @@ class Player:
                     break
 
     def update(self):
+        if self.dead:
+            self.current_animation.update()
+            return
+        
+        if self.hit:
+            self.current_animation.update()
+            if self.current_animation.is_finished():
+                self.hit = False
+            return
+
         for bullet in self.bullets:
             bullet.update()
+            if collision_rect_rect(self.x, self.y, self.w, self.h, bullet.x, bullet.y, bullet.w, bullet.h) and bullet.lifetime < 460:
+                self.health_bar.current_value -= 10
+                bullet.lifetime = 0
+                self.hit = True
+                self.current_animation = Animation(Sprite(0, 0, 64, 16, 16, 14), 3, 10, False)
+                self.bullets = [bullet for bullet in self.bullets if bullet.lifetime > 0]
+                return
         self.bullets = [bullet for bullet in self.bullets if bullet.lifetime > 0]
+
+        if self.health_bar.current_value <= 0:
+            self.dead = True
+            self.current_animation = Animation(Sprite(0, 0, 80, 16, 16, 14), 5, 25, False)
+            return
 
         self.vx *= self.friction
         self.vy *= self.friction
@@ -790,6 +868,7 @@ class Player:
             self.y = pyxel.height
 
         self.current_animation.update()
+        self.health_bar.update()
 
     def draw(self):
         for bullet in self.bullets:
@@ -1017,9 +1096,14 @@ class Game:
         pyxel.cls(6)
         pyxel.bltm(0, 0, 0, self.tlm_u, self.tlm_v, 228, 128, 0)
 
+        if self.player.dead and self.player.current_animation.is_finished():
+            self.pyxel_manager.change_scene_closing_doors(0, 2, 4)
+            self.player.current_animation = Animation(Sprite(0, 64, 80, 16, 16, 14), 1, 20)
+
         self.player.draw()
         self.spider.draw()
 
+        self.player.health_bar.draw()
         pyxel.blt(pyxel.mouse_x, pyxel.mouse_y, 0, 0, 0, 8, 8, 14)
 
 def text_size(text:str, font_size:int=1)-> tuple:
@@ -1042,6 +1126,9 @@ def get_anchored_position(x:int, y:int, w:int, h:int, anchor:int)-> tuple:
         y -= h // 2
         
     return x, y
+
+def collision_rect_rect(x1:int, y1:int, w1:int, h1:int, x2:int, y2:int, w2:int, h2:int)-> bool:
+    return not (x1 + w1 < x2 or x2 + w2 < x1 or y1 + h1 < y2 or y2 + h2 < y1)
 
 if __name__ == "__main__":
     Game()
