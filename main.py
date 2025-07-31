@@ -1,7 +1,7 @@
 """
 author : Léo Imbert
 @created : 31/07/2025 10:18
-@updated : 31/07/2025 14:49
+@updated : 31/07/2025 18:54
 """
 
 import random
@@ -491,6 +491,148 @@ class Player:
         self.current_animation.sprite.flip_horizontal = not self.facing_right
         self.current_animation.draw(self.x, self.y)
 
+class Spider:
+
+    def __init__(self, x:int, y:int):
+        self.x, self.y = x, y
+        self.w, self.h = 16, 16
+        self.speed = 0.5
+
+        self.idle = Animation(Sprite(0, 80, 16, self.w, self.h, 14), 2, 20)
+        self.walk = Animation(Sprite(0, 80, 32, self.w, self.h, 14), 4, 10)
+        self.current_animation = self.idle
+
+    def update(self, player_x:int, player_y:int):
+        dx = player_x - self.x
+        dy = player_y - self.y
+        mag = (dx ** 2 + dy ** 2) ** 0.5
+
+        if mag < 80:
+            self.current_animation = self.walk
+            self.current_animation.sprite.flip_horizontal = dx < 0
+            self.x += dx / mag * self.speed
+            self.y += dy / mag * self.speed
+        else:
+            self.current_animation = self.idle
+
+        self.current_animation.update()
+
+    def draw(self):
+        self.current_animation.draw(self.x, self.y)
+
+class Scarab:
+
+    def __init__(self, x:int, y:int):
+        self.x, self.y = x, y
+        self.w, self.h = 16, 16
+        self.speed = 0.5
+
+        self.idle = Animation(Sprite(0, 0, 112, self.w, self.h, 14), 2, 20)
+        self.walk = Animation(Sprite(0, 0, 128, self.w, self.h, 14), 4, 10)
+        self.current_animation = self.idle
+
+    def update(self, player_x:int, player_y:int):
+        dx = player_x - self.x
+        dy = player_y - self.y
+
+        if abs(dx) > pyxel.width / 2:
+            dx -= pyxel.width * (1 if dx > 0 else -1)
+        if abs(dy) > pyxel.height / 2:
+            dy -= pyxel.height * (1 if dy > 0 else -1)
+
+        mag = (dx ** 2 + dy ** 2) ** 0.5
+
+        if mag < 80:
+            self.current_animation = self.walk
+            self.current_animation.sprite.flip_horizontal = dx < 0
+            self.x += dx / mag * self.speed
+            self.y += dy / mag * self.speed
+        else:
+            self.current_animation = self.idle
+
+
+        if self.x > pyxel.width:
+            self.x = -self.w
+        elif self.x + self.w < 0:
+            self.x = pyxel.width
+
+        if self.y > pyxel.height:
+            self.y = -self.h
+        elif self.y + self.h < 0:
+            self.y = pyxel.height
+
+        self.current_animation.update()
+
+    def draw(self):
+        self.current_animation.draw(self.x, self.y)
+
+class Hornet:
+
+    def __init__(self, x:int, y:int):
+        self.x, self.y = x, y
+        self.w, self.h = 24, 24
+        self.speed = 0.4
+
+        self.idle = Animation(Sprite(0, 0, 176, self.w, self.h, 14), 8, 10)
+        self.attack = Animation(Sprite(0, 0, 200, self.w, self.h, 14), 8, 10)
+        self.current_animation = self.idle
+
+        self.shoot_timer = 0
+        self.wander_timer = 0
+
+    def update(self, player_x:int, player_y:int, player_bullets:list):
+        mag = ((player_x - self.x) ** 2 + (player_y - self.y) ** 2) ** 0.5
+
+        self.shoot_timer -= 1
+        if self.shoot_timer <= 0:
+            if mag < 80:
+                player_bullets.append(Bullet(self.x + 9, self.y + 9, player_x, player_y))
+            self.shoot_timer = random.randint(100, 240)
+
+        if mag < 80:
+            self.current_animation = self.attack
+        else:
+            self.current_animation = self.idle
+
+        self.wander_timer -= 1
+        if self.wander_timer <= 0:
+
+            mag_tp = 0
+            while mag_tp < 50:
+                self.tx, self.ty = random.randint(0, 228), random.randint(0, 128)
+                mag_tp = ((self.tx - player_x) ** 2 + (self.ty - player_y) ** 2) ** 0.5
+
+            self.wander_timer = 120
+
+        dx = self.tx - self.x
+        dy = self.ty - self.y
+
+        if abs(dx) > pyxel.width / 2:
+            dx -= pyxel.width * (1 if dx > 0 else -1)
+        if abs(dy) > pyxel.height / 2:
+            dy -= pyxel.height * (1 if dy > 0 else -1)
+
+        mag = (dx ** 2 + dy ** 2) ** 0.5
+
+        self.x += dx / mag * self.speed
+        self.y += dy / mag * self.speed
+
+        if self.x > pyxel.width:
+            self.x = -self.w
+        elif self.x + self.w < 0:
+            self.x = pyxel.width
+
+        if self.y > pyxel.height:
+            self.y = -self.h
+        elif self.y + self.h < 0:
+            self.y = pyxel.height
+
+        self.current_animation.update()
+        self.current_animation.sprite.flip_horizontal = player_x - self.x < 0
+
+    def draw(self):
+        self.current_animation.draw(self.x, self.y)
+
 class Game:
 
     def __init__(self):
@@ -505,6 +647,7 @@ class Game:
 
         #? Game Variables
         self.player = Player(10, 10)
+        self.spider = Hornet(200, 100)
 
         #? Run
         self.pyxel_manager.run()
@@ -523,11 +666,13 @@ class Game:
 
     def update_game(self):
         self.player.update()
+        self.spider.update(self.player.x, self.player.y, self.player.bullets)
 
     def draw_game(self):
         pyxel.cls(16)
 
         self.player.draw()
+        self.spider.draw()
 
         pyxel.blt(pyxel.mouse_x, pyxel.mouse_y, 0, 0, 0, 8, 8, 14)
 
