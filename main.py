@@ -1,7 +1,7 @@
 """
 author : Léo Imbert
 @created : 31/07/2025 10:18
-@updated : 01/08/2025 13:10
+@updated : 01/08/2025 19:03
 
 * Sounds :
 0. Button click
@@ -10,6 +10,21 @@ author : Léo Imbert
 3. Player Hurt
 4. Player Death
 5. Enemy Attack
+6. Bassline 1
+7. Melody 1
+8. Harmony 1
+9. Bassline 2
+10. Melody 2
+11. Harmony 2
+
+* Channels :
+0. Button click / Player Shoot
+1. Explosion
+2. Player Hurt / Player Death
+3. Enemy Attack
+4. Bassline
+5. Melody
+6. Harmony
 """
 
 import random
@@ -835,11 +850,6 @@ class Player:
             self.shoot = False
             self.current_animation = self.idle
 
-        if self.shoot:
-            pyxel_manager.apply_palette_effect(random_color_jitter_palette, amount=10)
-        else:
-            pyxel_manager.reset_palette()
-
         for bullet in self.bullets:
             bullet.update()
             if collision_rect_rect(self.x + 3, self.y + 1, 11, 12, bullet.x, bullet.y, bullet.w, bullet.h) and 0 < bullet.lifetime < 460:
@@ -1223,13 +1233,15 @@ class Game:
 
     def __init__(self):
         #? Scenes
-        main_menu_scene = Scene(0, "Loop Shot - Main Menu", self.update_main_menu, self.draw_main_menu, "assets.pyxres")
-        credits_scene = Scene(1, "Loop Shot - Credits", self.update_credits, self.draw_credits, "assets.pyxres")
-        game_scene = Scene(2, "Loop Shot - Game", self.update_game, self.draw_game, "assets.pyxres", on_enter=self.on_enter_game)
+        main_menu_scene = Scene(0, "Loop Shot - Main Menu", self.update_main_menu, self.draw_main_menu, "assets.pyxres", screen_mode=1)
+        credits_scene = Scene(1, "Loop Shot - Credits", self.update_credits, self.draw_credits, "assets.pyxres", screen_mode=1)
+        game_scene = Scene(2, "Loop Shot - Game", self.update_game, self.draw_game, "assets.pyxres", screen_mode=1, on_enter=self.on_enter_game)
         scenes = [main_menu_scene, credits_scene, game_scene]
 
         #? Pyxel Init
         self.pyxel_manager = PyxelManager(228, 128, scenes, 0, 60, True, quit_key=pyxel.KEY_A)
+        pyxel.channels.from_list([pyxel.Channel() for _ in range(7)])
+        self.setup_music()
 
         #? Functions
         def play_action():
@@ -1262,6 +1274,19 @@ class Game:
 
         #? Run
         self.pyxel_manager.run()
+
+    def setup_music(self):
+        pyxel.sounds[6].set("c1d#1d#1c1 g0g0a#0a#0 f0f0d#0d#0 d1d1c1c1","0","1","nfnfnfvn",24)
+        pyxel.sounds[9].set("a#0g0f0d#0 c1d#1f1g1 a#0a#0g0g0 f0f0c1c1","0","1","nfvnfnfv",24)
+
+        pyxel.sounds[7].set("d#2f2g2a#2 g2f2d#2c2 d#2f2g2f2 d#2c2a#1g1","1","1","vnnvnfnn",24)
+        pyxel.sounds[10].set("c2d#2f2g2 a#2g2f2d#2 g2a#2c3d#3 c3a#2g2f2","1","1","nvnvvnvn",24)
+
+        pyxel.sounds[8].set("g1a#1c2d#2 f1a#1d#2f2 c2d#2g2a#2 g1g1a#1a#1","2","2","nnvnfvnf",24)
+        pyxel.sounds[11].set("d2f2g2a#2 g2f2d#2c2 a#1c2d#2f2 d#2c2a#1g1","2","2","nfvnfnvn",24)
+
+        pyxel.musics[0].set([], [], [], [], [6, 9], [7, 10], [8, 11])
+        pyxel.playm(0, loop=True)
 
     def on_enter_game(self):
         self.tlm_u, self.tlm_v = random.choice([(0, 0), (0, 24*8), (0, 48*8)])
@@ -1358,17 +1383,6 @@ def hex_to_rgb(hex_val:int)-> tuple:
 
 def rgb_to_hex(r:int, g:int, b:int)-> int:
     return int(f"0x{r:02X}{g:02X}{b:02X}", 16)
-
-def random_color_jitter_palette(original_palette:list, kwargs:dict)-> list:
-    palette = []
-    amount = kwargs.get("amount", 30)
-    for color in original_palette:
-        r, g, b = hex_to_rgb(color)
-        palette.append(rgb_to_hex(min(max(r + random.randint(-amount, amount), 0), 255), 
-           min(max(g + random.randint(-amount, amount), 0), 255), 
-           min(max(b + random.randint(-amount, amount), 0), 255)))
-        
-    return palette
 
 def grayscaled_palette(original_palette:list, kwargs:dict)-> list:
     palette = []
