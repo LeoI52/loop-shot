@@ -18,7 +18,7 @@ Shoot enemies, but beware, your bullets loop around and can hit you if you’re 
   - **Scarab**: Chaser that uses smart wrapping.
   - **Spider**: Close-range pursuer.
   - **Hornet**: Ranged attacker with erratic movement.
-- 🔫 **Self-damaging Bullets**: Watch your shots — they come back.
+- 🔫 **Self-damaging Bullets**: Watch your shots because they come back.
 - 🎯 **30 Waves**: Increasingly difficult, filled with combos of enemies.
 
 ## 🧪 Controls
