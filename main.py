@@ -1,7 +1,7 @@
 """
 author : Léo Imbert
 @created : 31/07/2025 10:18
-@updated : 1/08/2025 09:49
+@updated : 01/08/2025 13:10
 
 * Sounds :
 0. Button click
@@ -781,6 +781,7 @@ class Player:
         self.friction = 0.85
 
         self.bullets = []
+        self.shoot_timer = 0
 
         self.idle = Animation(Sprite(0, 0, 16, 16, 16, 14), 2, 20, True)
         self.walk = Animation(Sprite(0, 0, 32, 16, 16, 14), 2, 10, True)
@@ -813,10 +814,13 @@ class Player:
                     self.vy = 0
                     break
 
-    def update(self):
+    def update(self, pyxel_manager:PyxelManager):
         if self.dead:
             self.current_animation.update()
+            pyxel_manager.apply_palette_effect(grayscaled_palette)
             return
+        else:
+            pyxel_manager.reset_palette()
         
         if self.hit:
             self.current_animation.update()
@@ -825,13 +829,20 @@ class Player:
                 self.hit = False
             return
         
+        self.shoot_timer -= 1
+        
         if self.shoot and self.current_animation.is_finished():
             self.shoot = False
             self.current_animation = self.idle
 
+        if self.shoot:
+            pyxel_manager.apply_palette_effect(random_color_jitter_palette, amount=10)
+        else:
+            pyxel_manager.reset_palette()
+
         for bullet in self.bullets:
             bullet.update()
-            if collision_rect_rect(self.x + 3, self.y + 1, 11, 12, bullet.x, bullet.y, bullet.w, bullet.h) and bullet.lifetime < 460:
+            if collision_rect_rect(self.x + 3, self.y + 1, 11, 12, bullet.x, bullet.y, bullet.w, bullet.h) and 0 < bullet.lifetime < 460:
                 self.health_bar.current_value -= 10
                 bullet.lifetime = 0
                 pyxel.play(2, 3)
@@ -861,7 +872,8 @@ class Player:
         if pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.KEY_S):
             self.vy = min(self.vy + self.speed, self.max_vy)
 
-        if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
+        if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and self.shoot_timer <= 0:
+            self.shoot_timer = 30
             self.bullets.append(Bullet(self.x + 5, self.y + 5, pyxel.mouse_x, pyxel.mouse_y))
             pyxel.play(0, 1)
             self.shoot = True
@@ -956,7 +968,7 @@ class Scarab:
     def __init__(self, x:int, y:int):
         self.x, self.y = x, y
         self.w, self.h = 16, 16
-        self.speed = 0.4
+        self.speed = 0.6
         self.dead = False
         self.health = random.choice([20, 30])
         self.attack = False
@@ -1038,7 +1050,7 @@ class Hornet:
 
     def update(self, player_x:int, player_y:int, player_bullets:list):
         for bullet in player_bullets:
-            if collision_rect_rect(self.x + 6, self.y + 2, 12, 15, bullet.x, bullet.y, bullet.w, bullet.h) and bullet.lifetime < 460:
+            if collision_rect_rect(self.x + 6, self.y + 2, 12, 15, bullet.x, bullet.y, bullet.w, bullet.h) and bullet.lifetime < 480:
                 self.health -= 10
                 bullet.lifetime = 0
                 return
@@ -1156,13 +1168,13 @@ class WaveManager:
             for enemy in self.enemies:
                 enemy.update(player.x, player.y, player.bullets)
 
-                if isinstance(enemy, Spider) and enemy.attack and enemy.current_animation.current_frame == 2 and collision_rect_rect(player.x + 3, player.y + 1, 11, 12, enemy.x, enemy.y, enemy.w, enemy.h):
+                if isinstance(enemy, Spider) and enemy.attack and enemy.current_animation.current_frame == 2 and collision_rect_rect(player.x, player.y, player.w, player.h, enemy.x, enemy.y, enemy.w, enemy.h):
                     player.health_bar.current_value -= 20
                     pyxel.play(2, 3)
                     player.hit = True
                     player.current_animation = Animation(Sprite(0, 0, 64, 16, 16, 14), 3, 10, False)
 
-                if isinstance(enemy, Scarab) and enemy.attack and enemy.current_animation.current_frame == 2 and collision_rect_rect(player.x + 3, player.y + 1, 11, 12, enemy.x + 3, enemy.y + 3, 13, 10):
+                if isinstance(enemy, Scarab) and enemy.attack and enemy.current_animation.current_frame == 2 and collision_rect_rect(player.x, player.y, player.x, player.h, enemy.x + 3, enemy.y + 3, 13, 10):
                     player.health_bar.current_value -= 5
                     pyxel.play(2, 3)
                     player.hit = True
@@ -1179,7 +1191,7 @@ class WaveManager:
 
         if len(self.enemies) == 0:
             if self.transition_timer == 180:
-                player.health_bar.current_value += 20
+                player.health_bar.current_value += 10
                 self.wave += 1
                 if self.wave >= len(self.waves):
                     self.win = True
@@ -1252,7 +1264,7 @@ class Game:
         self.pyxel_manager.run()
 
     def on_enter_game(self):
-        self.tlm_u, self.tlm_v = random.choice([(0, 0), (0, 24*8)])
+        self.tlm_u, self.tlm_v = random.choice([(0, 0), (0, 24*8), (0, 48*8)])
         self.player = Player(random.randint(0, 228), random.randint(0, 128))
         self.wave_manager = WaveManager()
 
@@ -1291,7 +1303,9 @@ class Game:
         pyxel.blt(pyxel.mouse_x, pyxel.mouse_y, 0, 0, 0, 8, 8, 14)
 
     def update_game(self):
-        self.player.update()
+        self.player.update(self.pyxel_manager)
+        if self.player.hit:
+            self.pyxel_manager.shake_camera(2, 0.5)
         self.wave_manager.update(self.player)
 
         if pyxel.btnp(pyxel.KEY_ESCAPE):
@@ -1335,6 +1349,35 @@ def get_anchored_position(x:int, y:int, w:int, h:int, anchor:int)-> tuple:
 
 def collision_rect_rect(x1:int, y1:int, w1:int, h1:int, x2:int, y2:int, w2:int, h2:int)-> bool:
     return not (x1 + w1 < x2 or x2 + w2 < x1 or y1 + h1 < y2 or y2 + h2 < y1)
+
+def hex_to_rgb(hex_val:int)-> tuple:
+    r = (hex_val >> 16) & 0xFF
+    g = (hex_val >> 8) & 0xFF
+    b = hex_val & 0xFF
+    return r, g, b
+
+def rgb_to_hex(r:int, g:int, b:int)-> int:
+    return int(f"0x{r:02X}{g:02X}{b:02X}", 16)
+
+def random_color_jitter_palette(original_palette:list, kwargs:dict)-> list:
+    palette = []
+    amount = kwargs.get("amount", 30)
+    for color in original_palette:
+        r, g, b = hex_to_rgb(color)
+        palette.append(rgb_to_hex(min(max(r + random.randint(-amount, amount), 0), 255), 
+           min(max(g + random.randint(-amount, amount), 0), 255), 
+           min(max(b + random.randint(-amount, amount), 0), 255)))
+        
+    return palette
+
+def grayscaled_palette(original_palette:list, kwargs:dict)-> list:
+    palette = []
+    for color in original_palette:
+        r, g, b = hex_to_rgb(color)
+        gray = int((r + g + b) / 3)
+        palette.append(rgb_to_hex(gray, gray, gray))
+
+    return palette
 
 if __name__ == "__main__":
     Game()
