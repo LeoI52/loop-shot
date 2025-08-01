@@ -5,6 +5,11 @@ author : Léo Imbert
 
 * Sounds :
 0. Button click
+1. Shoot
+2. Explosion
+3. Player Hurt
+4. Player Death
+5. Enemy Attack
 """
 
 import random
@@ -829,6 +834,7 @@ class Player:
             if collision_rect_rect(self.x + 3, self.y + 1, 11, 12, bullet.x, bullet.y, bullet.w, bullet.h) and bullet.lifetime < 460:
                 self.health_bar.current_value -= 10
                 bullet.lifetime = 0
+                pyxel.play(2, 3)
                 self.hit = True
                 self.current_animation = Animation(Sprite(0, 0, 64, 16, 16, 14), 3, 10, False)
                 self.bullets = [bullet for bullet in self.bullets if bullet.lifetime > 0]
@@ -836,6 +842,7 @@ class Player:
         self.bullets = [bullet for bullet in self.bullets if bullet.lifetime > 0]
 
         if self.health_bar.current_value <= 0:
+            pyxel.play(2, 4)
             self.dead = True
             self.current_animation = Animation(Sprite(0, 0, 80, 16, 16, 14), 5, 25, False)
             return
@@ -856,6 +863,7 @@ class Player:
 
         if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
             self.bullets.append(Bullet(self.x + 5, self.y + 5, pyxel.mouse_x, pyxel.mouse_y))
+            pyxel.play(0, 1)
             self.shoot = True
             self.current_animation = Animation(Sprite(0, 0, 48, 16, 16, 14), 2, 10, False)
             self.facing_right = not pyxel.mouse_x < self.x + 8
@@ -897,7 +905,8 @@ class Spider:
         self.w, self.h = 16, 16
         self.speed = 0.3
         self.dead = False
-        self.health = 100
+        self.health = random.choice([50, 60, 70])
+        self.attack = False
 
         self.idle = Animation(Sprite(0, 80, 16, self.w, self.h, 14), 2, 20)
         self.walk = Animation(Sprite(0, 80, 32, self.w, self.h, 14), 4, 10)
@@ -908,17 +917,28 @@ class Spider:
             if collision_rect_rect(self.x, self.y, self.w, self.h, bullet.x, bullet.y, bullet.w, bullet.h):
                 self.health -= 10
                 bullet.lifetime = 0
-                player_bullets = [bullet for bullet in player_bullets if bullet.lifetime > 0]
                 return
             
         if self.health <= 0:
             self.dead = True
 
+        if self.attack:
+            self.current_animation.update()
+            if self.current_animation.is_finished():
+                self.attack = False
+                self.current_animation = self.idle
+            return
+
         dx = player_x - self.x
         dy = player_y - self.y
         mag = (dx ** 2 + dy ** 2) ** 0.5
 
-        if mag < 150:
+        if mag < 10:
+            self.attack = True
+            pyxel.play(3, 5)
+            self.current_animation = Animation(Sprite(0, 80, 48, self.w, self.h, 14), 5, 10, False)
+            self.current_animation.sprite.flip_horizontal = dx < 0
+        elif mag < 150:
             self.current_animation = self.walk
             self.current_animation.sprite.flip_horizontal = dx < 0
             self.x += dx / mag * self.speed
@@ -938,7 +958,8 @@ class Scarab:
         self.w, self.h = 16, 16
         self.speed = 0.4
         self.dead = False
-        self.health = 100
+        self.health = random.choice([20, 30])
+        self.attack = False
 
         self.idle = Animation(Sprite(0, 0, 112, self.w, self.h, 14), 2, 20)
         self.walk = Animation(Sprite(0, 0, 128, self.w, self.h, 14), 4, 10)
@@ -949,11 +970,17 @@ class Scarab:
             if collision_rect_rect(self.x + 3, self.y + 3, 13, 10, bullet.x, bullet.y, bullet.w, bullet.h):
                 self.health -= 10
                 bullet.lifetime = 0
-                player_bullets = [bullet for bullet in player_bullets if bullet.lifetime > 0]
                 return
             
         if self.health <= 0:
             self.dead = True
+
+        if self.attack:
+            self.current_animation.update()
+            if self.current_animation.is_finished():
+                self.attack = False
+                self.current_animation = self.idle
+            return
 
         dx = player_x - self.x
         dy = player_y - self.y
@@ -965,14 +992,18 @@ class Scarab:
 
         mag = (dx ** 2 + dy ** 2) ** 0.5
 
-        if mag < 80:
+        if mag < 10:
+            self.attack = True
+            pyxel.play(3, 5)
+            self.current_animation = Animation(Sprite(0, 0, 144, self.w, self.h, 14), 5, 10, False)
+            self.current_animation.sprite.flip_horizontal = dx < 0
+        elif mag < 80:
             self.current_animation = self.walk
             self.current_animation.sprite.flip_horizontal = dx < 0
             self.x += dx / mag * self.speed
             self.y += dy / mag * self.speed
         else:
             self.current_animation = self.idle
-
 
         if self.x > pyxel.width:
             self.x = -self.w
@@ -995,7 +1026,7 @@ class Hornet:
         self.x, self.y = x, y
         self.w, self.h = 24, 24
         self.speed = 0.4
-        self.health = 100
+        self.health = random.choice([40, 50, 60])
         self.dead = False
 
         self.idle = Animation(Sprite(0, 0, 176, self.w, self.h, 14), 8, 10)
@@ -1010,7 +1041,6 @@ class Hornet:
             if collision_rect_rect(self.x + 6, self.y + 2, 12, 15, bullet.x, bullet.y, bullet.w, bullet.h) and bullet.lifetime < 460:
                 self.health -= 10
                 bullet.lifetime = 0
-                player_bullets = [bullet for bullet in player_bullets if bullet.lifetime > 0]
                 return
             
         if self.health <= 0:
@@ -1021,6 +1051,7 @@ class Hornet:
         self.shoot_timer -= 1
         if self.shoot_timer <= 0:
             if mag < 80:
+                pyxel.play(3, 5)
                 player_bullets.append(Bullet(self.x + 9, self.y + 9, player_x, player_y))
             self.shoot_timer = random.randint(100, 240)
 
@@ -1071,7 +1102,49 @@ class Hornet:
 class WaveManager:
 
     def __init__(self):
-        self.waves = [[Spider(200, 100)], [Spider(50, 50), Scarab(100, 70)]]
+        self.waves = [
+            # Intro waves
+            [Scarab(100, 64)],
+            [Spider(50, 50), Scarab(150, 70)],
+            [Spider(40, 60), Spider(180, 80), Scarab(110, 30)],
+            [Hornet(114, 64)],
+            [Scarab(30, 30), Scarab(190, 90), Hornet(114, 64)],
+
+            # Increasing challenge
+            [Spider(20, 20), Spider(200, 100), Hornet(114, 64)],
+            [Scarab(50, 20), Scarab(150, 100), Hornet(114, 30)],
+            [Spider(80, 30), Scarab(140, 80), Hornet(114, 64)],
+            [Spider(50, 50), Spider(160, 60), Hornet(114, 64), Scarab(100, 100)],
+            [Hornet(100, 40), Hornet(120, 80)],
+
+            # Mid-game swarm style
+            [Spider(10, 10), Spider(200, 10), Spider(10, 100), Spider(200, 100)],
+            [Scarab(50, 64), Scarab(170, 64), Hornet(114, 30)],
+            [Spider(40, 30), Spider(160, 90), Hornet(114, 64), Hornet(114, 100)],
+            [Spider(20, 20), Spider(114, 64), Spider(200, 100), Scarab(114, 20)],
+            [Hornet(60, 40), Hornet(160, 40), Hornet(110, 90)],
+
+            # Escalation with mixed enemies
+            [Scarab(50, 64), Scarab(170, 64), Scarab(114, 30)],
+            [Spider(40, 40), Spider(190, 90), Hornet(114, 64)],
+            [Hornet(40, 40), Hornet(190, 90), Scarab(114, 64)],
+            [Spider(20, 60), Spider(200, 60), Scarab(114, 20), Scarab(114, 100)],
+            [Hornet(80, 40), Hornet(140, 40), Hornet(114, 80)],
+
+            # High-pressure late waves
+            [Spider(30, 30), Spider(200, 30), Spider(30, 100), Spider(200, 100), Scarab(114, 64)],
+            [Hornet(90, 40), Hornet(130, 40), Scarab(80, 80), Scarab(140, 80)],
+            [Spider(20, 20), Spider(200, 20), Scarab(114, 30), Hornet(114, 64), Hornet(114, 100)],
+            [Hornet(60, 30), Hornet(160, 30), Hornet(60, 100), Hornet(160, 100)],
+            [Spider(50, 50), Spider(170, 50), Scarab(114, 20), Scarab(114, 100), Hornet(114, 64)],
+
+            # Final gauntlet
+            [Hornet(50, 30), Hornet(170, 30), Hornet(50, 100), Hornet(170, 100)],
+            [Spider(30, 30), Spider(190, 30), Spider(30, 90), Spider(190, 90), Hornet(114, 64)],
+            [Scarab(50, 40), Scarab(170, 40), Scarab(50, 90), Scarab(170, 90), Hornet(114, 64)],
+            [Hornet(80, 40), Hornet(140, 40), Hornet(80, 90), Hornet(140, 90), Hornet(114, 64)],
+            [Spider(20, 20), Spider(200, 20), Scarab(50, 64), Scarab(170, 64), Hornet(114, 64), Hornet(114, 100)],
+        ]
         self.wave = -1
         self.transition_timer = 180
         self.enemies = []
@@ -1082,7 +1155,21 @@ class WaveManager:
         if not player.hit and not player.dead:
             for enemy in self.enemies:
                 enemy.update(player.x, player.y, player.bullets)
+
+                if isinstance(enemy, Spider) and enemy.attack and enemy.current_animation.current_frame == 2 and collision_rect_rect(player.x + 3, player.y + 1, 11, 12, enemy.x, enemy.y, enemy.w, enemy.h):
+                    player.health_bar.current_value -= 20
+                    pyxel.play(2, 3)
+                    player.hit = True
+                    player.current_animation = Animation(Sprite(0, 0, 64, 16, 16, 14), 3, 10, False)
+
+                if isinstance(enemy, Scarab) and enemy.attack and enemy.current_animation.current_frame == 2 and collision_rect_rect(player.x + 3, player.y + 1, 11, 12, enemy.x + 3, enemy.y + 3, 13, 10):
+                    player.health_bar.current_value -= 5
+                    pyxel.play(2, 3)
+                    player.hit = True
+                    player.current_animation = Animation(Sprite(0, 0, 64, 16, 16, 14), 3, 10, False)
+
                 if enemy.dead:
+                    pyxel.play(1, 2)
                     off = 0 if isinstance(enemy, Hornet) else 4
                     self.explosions.append((Animation(Sprite(0, 24, 224, 24, 24, 14), 8, 5, False), enemy.x - off, enemy.y - off))
             self.enemies = [enemy for enemy in self.enemies if not enemy.dead]
@@ -1092,6 +1179,7 @@ class WaveManager:
 
         if len(self.enemies) == 0:
             if self.transition_timer == 180:
+                player.health_bar.current_value += 20
                 self.wave += 1
                 if self.wave >= len(self.waves):
                     self.win = True
