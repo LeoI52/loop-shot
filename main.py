@@ -1,7 +1,10 @@
 """
 author : Léo Imbert
 @created : 31/07/2025 10:18
-@updated : 31/07/2025 21:49
+@updated : 1/08/2025 09:49
+
+* Sounds :
+0. Button click
 """
 
 import random
@@ -783,6 +786,7 @@ class Player:
         self.facing_right = True
         self.dead = False
         self.hit = False
+        self.shoot = False
 
     def update_velocity_x(self):
         if self.vx != 0:
@@ -811,13 +815,18 @@ class Player:
         
         if self.hit:
             self.current_animation.update()
+            self.health_bar.update()
             if self.current_animation.is_finished():
                 self.hit = False
             return
+        
+        if self.shoot and self.current_animation.is_finished():
+            self.shoot = False
+            self.current_animation = self.idle
 
         for bullet in self.bullets:
             bullet.update()
-            if collision_rect_rect(self.x, self.y, self.w, self.h, bullet.x, bullet.y, bullet.w, bullet.h) and bullet.lifetime < 460:
+            if collision_rect_rect(self.x + 3, self.y + 1, 11, 12, bullet.x, bullet.y, bullet.w, bullet.h) and bullet.lifetime < 460:
                 self.health_bar.current_value -= 10
                 bullet.lifetime = 0
                 self.hit = True
@@ -847,12 +856,16 @@ class Player:
 
         if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
             self.bullets.append(Bullet(self.x + 5, self.y + 5, pyxel.mouse_x, pyxel.mouse_y))
+            self.shoot = True
+            self.current_animation = Animation(Sprite(0, 0, 48, 16, 16, 14), 2, 10, False)
             self.facing_right = not pyxel.mouse_x < self.x + 8
+            return
 
-        if abs(self.vx) > 0.1 or abs(self.vy) > 0.1:
-            self.current_animation = self.walk
-        else:
-            self.current_animation = self.idle
+        if not self.shoot:
+            if abs(self.vx) > 0.1 or abs(self.vy) > 0.1:
+                self.current_animation = self.walk
+            else:
+                self.current_animation = self.idle
 
         self.update_velocity_x()
         self.update_velocity_y()
@@ -882,18 +895,30 @@ class Spider:
     def __init__(self, x:int, y:int):
         self.x, self.y = x, y
         self.w, self.h = 16, 16
-        self.speed = 0.5
+        self.speed = 0.3
+        self.dead = False
+        self.health = 100
 
         self.idle = Animation(Sprite(0, 80, 16, self.w, self.h, 14), 2, 20)
         self.walk = Animation(Sprite(0, 80, 32, self.w, self.h, 14), 4, 10)
         self.current_animation = self.idle
 
-    def update(self, player_x:int, player_y:int):
+    def update(self, player_x:int, player_y:int, player_bullets:list):
+        for bullet in player_bullets:
+            if collision_rect_rect(self.x, self.y, self.w, self.h, bullet.x, bullet.y, bullet.w, bullet.h):
+                self.health -= 10
+                bullet.lifetime = 0
+                player_bullets = [bullet for bullet in player_bullets if bullet.lifetime > 0]
+                return
+            
+        if self.health <= 0:
+            self.dead = True
+
         dx = player_x - self.x
         dy = player_y - self.y
         mag = (dx ** 2 + dy ** 2) ** 0.5
 
-        if mag < 80:
+        if mag < 150:
             self.current_animation = self.walk
             self.current_animation.sprite.flip_horizontal = dx < 0
             self.x += dx / mag * self.speed
@@ -911,13 +936,25 @@ class Scarab:
     def __init__(self, x:int, y:int):
         self.x, self.y = x, y
         self.w, self.h = 16, 16
-        self.speed = 0.5
+        self.speed = 0.4
+        self.dead = False
+        self.health = 100
 
         self.idle = Animation(Sprite(0, 0, 112, self.w, self.h, 14), 2, 20)
         self.walk = Animation(Sprite(0, 0, 128, self.w, self.h, 14), 4, 10)
         self.current_animation = self.idle
 
-    def update(self, player_x:int, player_y:int):
+    def update(self, player_x:int, player_y:int, player_bullets:list):
+        for bullet in player_bullets:
+            if collision_rect_rect(self.x + 3, self.y + 3, 13, 10, bullet.x, bullet.y, bullet.w, bullet.h):
+                self.health -= 10
+                bullet.lifetime = 0
+                player_bullets = [bullet for bullet in player_bullets if bullet.lifetime > 0]
+                return
+            
+        if self.health <= 0:
+            self.dead = True
+
         dx = player_x - self.x
         dy = player_y - self.y
 
@@ -958,6 +995,8 @@ class Hornet:
         self.x, self.y = x, y
         self.w, self.h = 24, 24
         self.speed = 0.4
+        self.health = 100
+        self.dead = False
 
         self.idle = Animation(Sprite(0, 0, 176, self.w, self.h, 14), 8, 10)
         self.attack = Animation(Sprite(0, 0, 200, self.w, self.h, 14), 8, 10)
@@ -967,6 +1006,16 @@ class Hornet:
         self.wander_timer = 0
 
     def update(self, player_x:int, player_y:int, player_bullets:list):
+        for bullet in player_bullets:
+            if collision_rect_rect(self.x + 6, self.y + 2, 12, 15, bullet.x, bullet.y, bullet.w, bullet.h) and bullet.lifetime < 460:
+                self.health -= 10
+                bullet.lifetime = 0
+                player_bullets = [bullet for bullet in player_bullets if bullet.lifetime > 0]
+                return
+            
+        if self.health <= 0:
+            self.dead = True
+
         mag = ((player_x - self.x) ** 2 + (player_y - self.y) ** 2) ** 0.5
 
         self.shoot_timer -= 1
@@ -1019,6 +1068,57 @@ class Hornet:
     def draw(self):
         self.current_animation.draw(self.x, self.y)
 
+class WaveManager:
+
+    def __init__(self):
+        self.waves = [[Spider(200, 100)], [Spider(50, 50), Scarab(100, 70)]]
+        self.wave = -1
+        self.transition_timer = 180
+        self.enemies = []
+        self.explosions = []
+        self.win = False
+
+    def update(self, player:Player):
+        if not player.hit and not player.dead:
+            for enemy in self.enemies:
+                enemy.update(player.x, player.y, player.bullets)
+                if enemy.dead:
+                    off = 0 if isinstance(enemy, Hornet) else 4
+                    self.explosions.append((Animation(Sprite(0, 24, 224, 24, 24, 14), 8, 5, False), enemy.x - off, enemy.y - off))
+            self.enemies = [enemy for enemy in self.enemies if not enemy.dead]
+
+            for anim, x, y in self.explosions:
+                anim.update()
+
+        if len(self.enemies) == 0:
+            if self.transition_timer == 180:
+                self.wave += 1
+                if self.wave >= len(self.waves):
+                    self.win = True
+            self.transition_timer -= 1
+
+        if self.transition_timer <= 0:
+            self.transition_timer = 180
+            if self.wave < len(self.waves):
+                self.enemies = self.waves[self.wave]
+
+    def draw(self):
+        for enemy in self.enemies:
+            enemy.draw()
+
+        for anim, x, y in self.explosions:
+            anim.draw(x, y)
+        self.explosions = [(anim, x, y) for anim, x, y in self.explosions if not anim.is_finished()]
+
+        if not self.win:
+            pyxel.text(2, 10, f"Wave:{self.wave + 1}", 1)
+
+        if 0 < self.transition_timer < 180 and len(self.enemies) == 0 and self.wave < len(self.waves):
+            Text(f"Wave {self.wave + 1} loading...", 114, 64, 1, 1, ANCHOR_CENTER, shadow=True, shadow_color=4).draw()
+        if self.win:
+            Text("You won !", 114, 64, 1, 2, ANCHOR_CENTER, shadow=True, shadow_color=4).draw()
+            Text("Press ESC", 114, 80, 1, 1, ANCHOR_CENTER, shadow=True, shadow_color=4).draw()
+
 class Game:
 
     def __init__(self):
@@ -1029,23 +1129,36 @@ class Game:
         scenes = [main_menu_scene, credits_scene, game_scene]
 
         #? Pyxel Init
-        self.pyxel_manager = PyxelManager(228, 128, scenes, 0, 60, True)
+        self.pyxel_manager = PyxelManager(228, 128, scenes, 0, 60, True, quit_key=pyxel.KEY_A)
+
+        #? Functions
+        def play_action():
+            pyxel.play(0, 0)
+            self.pyxel_manager.change_scene_closing_doors(2, 2, 4)
+
+        def credits_action():
+            pyxel.play(0, 0)
+            self.pyxel_manager.change_scene_closing_doors(1, 2, 4)
+
+        def back_action():
+            pyxel.play(0, 0)
+            self.pyxel_manager.change_scene_closing_doors(0, 2, 4)
 
         #? Main Menu Variables
         self.title = Text("Loop\nShot", 114, 10, 1, 2, ANCHOR_TOP, shadow=True, shadow_color=4, wavy=True)
-        self.play_button = Button("Play", 114, 60, 1, 4, 6, 4, 1, True, 4, anchor=ANCHOR_TOP, command=lambda:self.pyxel_manager.change_scene_closing_doors(2, 2, 4))
-        self.credits_button = Button("Credits", 114, 80, 1, 4, 6, 4, 1, True, 4, anchor=ANCHOR_TOP, command=lambda:self.pyxel_manager.change_scene_closing_doors(1, 2, 4))
+        self.play_button = Button("Play", 114, 60, 1, 4, 6, 4, 1, True, 4, anchor=ANCHOR_TOP, command=play_action)
+        self.credits_button = Button("Credits", 114, 80, 1, 4, 6, 4, 1, True, 4, anchor=ANCHOR_TOP, command=credits_action)
         self.quit_button = Button("Quit", 114, 100, 1, 4, 6, 4, 1, True, 4, anchor=ANCHOR_TOP, command=pyxel.quit)
 
         #? Credits Variables
         self.credits_title = Text("Credits", 114, 10, 1, 2, ANCHOR_TOP, shadow=True, shadow_color=4, wavy=True)
         self.credits_text = Text('This game was made for the\n2025 GMTK game jam\nusing pyxel and mostly the\n"Robot Warfare" asset pack from\nMattWalkden', 114, 52, 1, 1, ANCHOR_TOP, shadow=True, shadow_color=4)
-        self.back_button = Button("Back", 5, 123, 1, 4, 6, 4, 1, True, 4, anchor=ANCHOR_BOTTOM_LEFT, command=lambda:self.pyxel_manager.change_scene_closing_doors(0, 2, 4))
+        self.back_button = Button("Back", 5, 123, 1, 4, 6, 4, 1, True, 4, anchor=ANCHOR_BOTTOM_LEFT, command=back_action)
 
         #? Game Variables
         self.tlm_u, self.tlm_v = 0, 0
-        self.player = Player(0, 10)
-        self.spider = Hornet(200, 100)
+        self.player = Player(0, 0)
+        self.wave_manager = WaveManager()
 
         #? Run
         self.pyxel_manager.run()
@@ -1053,6 +1166,7 @@ class Game:
     def on_enter_game(self):
         self.tlm_u, self.tlm_v = random.choice([(0, 0), (0, 24*8)])
         self.player = Player(random.randint(0, 228), random.randint(0, 128))
+        self.wave_manager = WaveManager()
 
     def update_main_menu(self):
         self.title.update()
@@ -1090,7 +1204,11 @@ class Game:
 
     def update_game(self):
         self.player.update()
-        self.spider.update(self.player.x, self.player.y, self.player.bullets)
+        self.wave_manager.update(self.player)
+
+        if pyxel.btnp(pyxel.KEY_ESCAPE):
+            pyxel.play(0, 0)
+            self.pyxel_manager.change_scene_closing_doors(0, 2, 4)
 
     def draw_game(self):
         pyxel.cls(6)
@@ -1101,7 +1219,7 @@ class Game:
             self.player.current_animation = Animation(Sprite(0, 64, 80, 16, 16, 14), 1, 20)
 
         self.player.draw()
-        self.spider.draw()
+        self.wave_manager.draw()
 
         self.player.health_bar.draw()
         pyxel.blt(pyxel.mouse_x, pyxel.mouse_y, 0, 0, 0, 8, 8, 14)
