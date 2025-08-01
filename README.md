@@ -19,7 +19,6 @@ Shoot enemies, but beware, your bullets loop around and can hit you if you’re 
   - **Spider**: Close-range pursuer.
   - **Hornet**: Ranged attacker with erratic movement.
 - 🔫 **Self-damaging Bullets**: Watch your shots — they come back.
-- 🌍 **Biomes**: The arena changes look & feel as you progress.
 - 🎯 **30 Waves**: Increasingly difficult, filled with combos of enemies.
 
 ## 🧪 Controls
