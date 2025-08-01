@@ -1,7 +1,7 @@
 """
 author : Léo Imbert
 @created : 31/07/2025 10:18
-@updated : 01/08/2025 19:03
+@updated : 01/08/2025 19:13
 
 * Sounds :
 0. Button click
@@ -1233,13 +1233,13 @@ class Game:
 
     def __init__(self):
         #? Scenes
-        main_menu_scene = Scene(0, "Loop Shot - Main Menu", self.update_main_menu, self.draw_main_menu, "assets.pyxres", screen_mode=1)
-        credits_scene = Scene(1, "Loop Shot - Credits", self.update_credits, self.draw_credits, "assets.pyxres", screen_mode=1)
-        game_scene = Scene(2, "Loop Shot - Game", self.update_game, self.draw_game, "assets.pyxres", screen_mode=1, on_enter=self.on_enter_game)
+        main_menu_scene = Scene(0, "Loop Shot - Main Menu", self.update_main_menu, self.draw_main_menu, "assets.pyxres")
+        credits_scene = Scene(1, "Loop Shot - Credits", self.update_credits, self.draw_credits, "assets.pyxres")
+        game_scene = Scene(2, "Loop Shot - Game", self.update_game, self.draw_game, "assets.pyxres", on_enter=self.on_enter_game)
         scenes = [main_menu_scene, credits_scene, game_scene]
 
         #? Pyxel Init
-        self.pyxel_manager = PyxelManager(228, 128, scenes, 0, 60, True, quit_key=pyxel.KEY_A)
+        self.pyxel_manager = PyxelManager(228, 128, scenes, 0, 60, True, quit_key=pyxel.KEY_NONE)
         pyxel.channels.from_list([pyxel.Channel() for _ in range(7)])
         self.setup_music()
 
