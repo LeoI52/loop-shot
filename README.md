@@ -12,6 +12,10 @@ A fast-paced wraparound arena shooter built in **72 hours** for the 2025 GMTK ga
 You control a small survivor in a looping arena filled with relentless bugs.  
 Shoot enemies, but beware, your bullets loop around and can hit you if you’re careless!
 
+## ▶️ How to play
+
+<iframe frameborder="0" src="https://itch.io/embed/3771363" width="552" height="167"><a href="https://leo-imbert.itch.io/loop-shot">Loop Shot by Léo Imbert</a></iframe>
+
 ### 🔄 Key Features
 - 🌀 **Wraparound Arena**: Bullets and enemies loop through screen edges.
 - 👾 **Three Unique Enemies**:
