@@ -1,7 +1,7 @@
 """
 author : Léo Imbert
 @created : 31/07/2025 10:18
-@updated : 01/08/2025 19:13
+@updated : 02/08/2025 09:39
 
 * Sounds :
 0. Button click
@@ -691,6 +691,45 @@ class Button:
         if self.__border:
             pyxel.rectb(x, y, self.__width, self.__height, self.__border_color)
 
+class IconButton:
+
+    def __init__(self, x:int, y:int, background_color:int, hover_background_color:int, sprite:Sprite, border:bool=False, border_color:int=0, relative:bool=True, anchor:int=ANCHOR_TOP_LEFT, command=None):
+        self.__x = x + 1 if not border else x + 2
+        self.__y = y + 1 if not border else y + 2
+        self.__width = sprite.w + 2 if not border else sprite.w + 4
+        self.__height = sprite.h + 2 if not border else sprite.h + 4
+        self.__background_color = background_color
+        self.__hover_background_color = hover_background_color
+        self.__sprite = sprite
+        self.__border = border
+        self.__border_color = border_color
+        self.__relative = relative
+        self.__command = command
+
+        self.__x, self.__y = get_anchored_position(self.__x, self.__y, self.__width, self.__height, anchor)
+
+    def is_hovered(self, camera_x:int=0, camera_y:int=0)-> bool:
+        if self.__x - 2 < pyxel.mouse_x < self.__x + self.__sprite.w + 1 and self.__y - 2 < pyxel.mouse_y < self.__y + self.__sprite.h + 1 and self.__relative:
+            return True
+        elif self.__x - 2 < camera_x + pyxel.mouse_x < self.__x + self.__sprite.w + 1 and self.__y - 2 < camera_y + pyxel.mouse_y < self.__y + self.__sprite.h + 1 and not self.__relative:
+            return True
+        
+    def update(self, camera_x:int=0, camera_y:int=0):
+        if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and self.is_hovered(camera_x, camera_y) and self.__command:
+            self.__command()
+
+    def draw(self, camera_x:int=0, camera_y:int=0):
+        x = camera_x + self.__x if self.__relative else self.__x
+        y = camera_y + self.__y if self.__relative else self.__y
+
+        if self.__border:
+            pyxel.rectb(x - 2, y - 2, self.__sprite.w + 4, self.__sprite.h + 4, self.__border_color)
+        if self.is_hovered(camera_x, camera_y):
+            pyxel.rect(x - 1, y - 1, self.__sprite.w + 2, self.__sprite.h + 2, self.__hover_background_color)
+        else:
+            pyxel.rect(x - 1, y - 1, self.__sprite.w + 2, self.__sprite.h + 2, self.__background_color)
+        pyxel.blt(x, y, self.__sprite.img, self.__sprite.u, self.__sprite.v, self.__sprite.w, self.__sprite.h, self.__sprite.colkey)
+
 class UIBar:
 
     def __init__(self, x:int, y:int, width:int, height:int, border_color:int, bar_color:int, starting_value:int, max_value:int, relative:bool=True, horizontal:bool=True, regen:bool=False, speed_regen:int=0.5, value_regen:int=1, anchor:int=ANCHOR_TOP_LEFT):
@@ -1261,6 +1300,8 @@ class Game:
         self.play_button = Button("Play", 114, 60, 1, 4, 6, 4, 1, True, 4, anchor=ANCHOR_TOP, command=play_action)
         self.credits_button = Button("Credits", 114, 80, 1, 4, 6, 4, 1, True, 4, anchor=ANCHOR_TOP, command=credits_action)
         self.quit_button = Button("Quit", 114, 100, 1, 4, 6, 4, 1, True, 4, anchor=ANCHOR_TOP, command=pyxel.quit)
+        self.sound_button = IconButton(2, 112, 1, 4, Sprite(0, 0, 8, 8, 8, 14), True, 4, anchor=ANCHOR_BOTTOM_LEFT, command=self.setup_music)
+        self.mute_button = IconButton(2, 126, 1, 4, Sprite(0, 8, 8, 8, 8, 14), True, 4, anchor=ANCHOR_BOTTOM_LEFT, command=self.mute_music)
 
         #? Credits Variables
         self.credits_title = Text("Credits", 114, 10, 1, 2, ANCHOR_TOP, shadow=True, shadow_color=4, wavy=True)
@@ -1288,6 +1329,10 @@ class Game:
         pyxel.musics[0].set([], [], [], [], [6, 9], [7, 10], [8, 11])
         pyxel.playm(0, loop=True)
 
+    def mute_music(self):
+        for channel in [4, 5, 6]:
+            pyxel.stop(channel)
+
     def on_enter_game(self):
         self.tlm_u, self.tlm_v = random.choice([(0, 0), (0, 24*8), (0, 48*8)])
         self.player = Player(random.randint(0, 228), random.randint(0, 128))
@@ -1298,6 +1343,8 @@ class Game:
         self.play_button.update()
         self.credits_button.update()
         self.quit_button.update()
+        self.sound_button.update()
+        self.mute_button.update()
 
     def draw_main_menu(self):
         pyxel.cls(0)
@@ -1308,6 +1355,8 @@ class Game:
         self.play_button.draw()
         self.credits_button.draw()
         self.quit_button.draw()
+        self.sound_button.draw()
+        self.mute_button.draw()
 
         pyxel.blt(pyxel.mouse_x, pyxel.mouse_y, 0, 0, 0, 8, 8, 14)
 
