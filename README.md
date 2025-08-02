@@ -14,7 +14,7 @@ Shoot enemies, but beware, your bullets loop around and can hit you if you’re 
 
 ## ▶️ How to play
 
-<iframe frameborder="0" src="https://itch.io/embed/3771363" width="552" height="167"><a href="https://leo-imbert.itch.io/loop-shot">Loop Shot by Léo Imbert</a></iframe>
+You can play Loop Shot on [itch.io](https://leo-imbert.itch.io/loop-shot).
 
 ### 🔄 Key Features
 - 🌀 **Wraparound Arena**: Bullets and enemies loop through screen edges.
