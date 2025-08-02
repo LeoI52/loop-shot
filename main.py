@@ -1,7 +1,7 @@
 """
 @author : Léo Imbert
 @created : 31/07/2025 10:18
-@updated : 02/08/2025 11:47
+@updated : 02/08/2025 12:16
 
 * Sounds :
 0. Button click
@@ -17,10 +17,11 @@
 10. Melody 2
 11. Harmony 2
 12. Dialog
+13. Enemy Hurt
 
 * Channels :
 0. Button click / Player Shoot
-1. Explosion / Dialog
+1. Explosion / Dialog / Enemy Hurt
 2. Player Hurt / Player Death
 3. Enemy Attack
 4. Bassline
@@ -1150,6 +1151,7 @@ class Spider:
         for bullet in player_bullets:
             if collision_rect_rect(self.x, self.y, self.w, self.h, bullet.x, bullet.y, bullet.w, bullet.h):
                 self.health -= 10
+                pyxel.play(1, 13)
                 bullet.lifetime = 0
                 return
             
@@ -1203,6 +1205,7 @@ class Scarab:
         for bullet in player_bullets:
             if collision_rect_rect(self.x + 3, self.y + 3, 13, 10, bullet.x, bullet.y, bullet.w, bullet.h):
                 self.health -= 10
+                pyxel.play(1, 13)
                 bullet.lifetime = 0
                 return
             
@@ -1267,13 +1270,14 @@ class Hornet:
         self.attack = Animation(Sprite(0, 0, 200, self.w, self.h, 14), 8, 10)
         self.current_animation = self.idle
 
-        self.shoot_timer = 0
+        self.shoot_timer = random.randint(100, 240)
         self.wander_timer = 0
 
     def update(self, player_x:int, player_y:int, player_bullets:list):
         for bullet in player_bullets:
             if collision_rect_rect(self.x + 6, self.y + 2, 12, 15, bullet.x, bullet.y, bullet.w, bullet.h) and bullet.lifetime < 480:
                 self.health -= 10
+                pyxel.play(1, 13)
                 bullet.lifetime = 0
                 return
             
