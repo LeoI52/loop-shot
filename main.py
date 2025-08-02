@@ -1,7 +1,7 @@
 """
-author : Léo Imbert
+@author : Léo Imbert
 @created : 31/07/2025 10:18
-@updated : 02/08/2025 09:39
+@updated : 02/08/2025 11:47
 
 * Sounds :
 0. Button click
@@ -16,10 +16,11 @@ author : Léo Imbert
 9. Bassline 2
 10. Melody 2
 11. Harmony 2
+12. Dialog
 
 * Channels :
 0. Button click / Player Shoot
-1. Explosion
+1. Explosion / Dialog
 2. Player Hurt / Player Death
 3. Enemy Attack
 4. Bassline
@@ -132,6 +133,65 @@ characters_matrices = {
     "%":[[0,1,0,0,0,0,0],[1,0,1,0,1,1,0],[0,1,0,0,1,0,0],[0,0,0,1,1,0,0],[0,0,1,1,0,0,0],[0,0,1,0,0,1,0],[0,1,1,0,1,0,1],[1,1,0,0,0,1,0]],
     "€":[[0,0,0,0,0,0],[0,0,1,1,1,0],[0,1,0,0,0,1],[0,1,1,1,0,0],[1,0,0,0,0,0],[0,1,1,1,0,0],[0,1,0,0,0,1],[0,0,1,1,1,0]],
     "$":[[0,0,1,0,0],[0,1,1,1,0],[1,0,1,0,1],[1,0,1,0,0],[0,1,1,1,0],[0,0,1,0,1],[1,0,1,0,1],[0,1,1,1,0],[0,0,1,0,0]]
+}
+
+keys_to_representation = {
+    pyxel.KEY_SPACE: "space",
+    pyxel.KEY_A: "a",
+    pyxel.KEY_B: "b",
+    pyxel.KEY_C: "c",
+    pyxel.KEY_D: "d",
+    pyxel.KEY_E: "e",
+    pyxel.KEY_F: "f",
+    pyxel.KEY_G: "g",
+    pyxel.KEY_H: "h",
+    pyxel.KEY_I: "i",
+    pyxel.KEY_J: "j",
+    pyxel.KEY_K: "k",
+    pyxel.KEY_L: "l",
+    pyxel.KEY_M: "m",
+    pyxel.KEY_N: "n",
+    pyxel.KEY_O: "o",
+    pyxel.KEY_P: "p",
+    pyxel.KEY_Q: "q",
+    pyxel.KEY_R: "r",
+    pyxel.KEY_S: "s",
+    pyxel.KEY_T: "t",
+    pyxel.KEY_U: "u",
+    pyxel.KEY_V: "v",
+    pyxel.KEY_W: "w",
+    pyxel.KEY_X: "x",
+    pyxel.KEY_Y: "y",
+    pyxel.KEY_Z: "z",
+    pyxel.KEY_0: "0",
+    pyxel.KEY_1: "1",
+    pyxel.KEY_2: "2",
+    pyxel.KEY_3: "3",
+    pyxel.KEY_4: "4",
+    pyxel.KEY_5: "5",
+    pyxel.KEY_6: "6",
+    pyxel.KEY_7: "7",
+    pyxel.KEY_8: "8",
+    pyxel.KEY_9: "9",
+    pyxel.KEY_MINUS: "-",
+    pyxel.KEY_EQUALS: "=",
+    pyxel.KEY_LEFTBRACKET: "[",
+    pyxel.KEY_RIGHTBRACKET: "]",
+    pyxel.KEY_SEMICOLON: ";",
+    pyxel.KEY_COMMA: ",",
+    pyxel.KEY_PERIOD: ".",
+    pyxel.KEY_SLASH: "/",
+    pyxel.KEY_BACKSPACE: "backspace",
+    pyxel.KEY_TAB: "tab",
+    pyxel.KEY_RETURN: "enter",
+    pyxel.KEY_SHIFT: "shift",
+    pyxel.KEY_LCTRL: "ctrl",
+    pyxel.KEY_ALT: "alt",
+    pyxel.KEY_ESCAPE: "escape",
+    pyxel.KEY_UP: "up",
+    pyxel.KEY_DOWN: "down",
+    pyxel.KEY_LEFT: "left",
+    pyxel.KEY_RIGHT: "right"
 }
 
 NORMAL_COLOR_MODE = 0
@@ -782,6 +842,119 @@ class UIBar:
                 pyxel.rect(self.__x + 1, self.__y + self.__height - self.__bar_height + 1, self.__width, self.__bar_height, self.__bar_color)
                 pyxel.rectb(self.__x, self.__y, self.__width + 2, self.__height + 2, self.__border_color)
 
+class Dialog:
+
+    def __init__(self, lines:list, background_color:int, names_colors:list|int, text_colors:list|int, border:bool=False, border_color:int=0, sound:bool=False, channel:int=0, sound_number:int=0):
+        self.lines = lines
+        self.background_color = background_color
+        self.names_colors = names_colors
+        self.text_colors = text_colors
+        self.border = border
+        self.border_color = border_color
+        self.sound = sound
+        self.channel = channel
+        self.sound_number = sound_number
+
+class DialogManager:
+
+    def __init__(self, relative_start_x:int, relative_start_y:int, relative_end_x:int, relative_end_y:int, width:int, height:int, char_speed:int=3, next_key:int=pyxel.KEY_SPACE):
+        self.__start_x = relative_start_x
+        self.__start_y = relative_start_y
+        self.__end_x = relative_end_x
+        self.__end_y = relative_end_y
+        self.__x = relative_start_x
+        self.__y = relative_start_y
+        self.__width = width
+        self.__height = height
+        self.__background_color = 0
+        self.__names_colors = 0
+        self.__text_colors = []
+        self.__border = False
+        self.__border_color = 0
+        self.__next_key = next_key
+
+        self.__started = False
+        self.__open = False
+        self.__dialog = None
+
+        self.__current_line = 0
+        self.__char_index = 0
+        self.__char_speed = char_speed
+        self.__frame_count = 0
+
+    def is_dialog(self)-> bool:
+        return self.__started
+
+    def start_dialog(self, dialog:Dialog):
+        if not self.__started:
+            self.__background_color = dialog.background_color
+            self.__names_colors = dialog.names_colors
+            self.__text_colors = dialog.text_colors
+            self.__border = dialog.border
+            self.__border_color = dialog.border_color
+
+            self.__started = True
+            self.__dialog = dialog
+            self.__current_line = 0
+            self.__char_index = 0
+            self.__frame_count = 0
+
+    def stop_dialog(self):
+        self.__started = False
+        self.__open = False
+        self.__dialog = None
+
+    def update(self):
+        if self.__started:
+            self.__x = lerp(self.__x, self.__end_x, 0.15)
+            self.__y = lerp(self.__y, self.__end_y, 0.15)
+
+            if abs(self.__x - self.__end_x) < 1 and abs(self.__y - self.__end_y) < 1:
+                self.__open = True
+
+            if self.__open:
+                if self.__char_index < len(self.__dialog.lines[self.__current_line][1]):
+                    if pyxel.btnp(self.__next_key):
+                        self.__char_index = len(self.__dialog.lines[self.__current_line][1])
+                        if self.__dialog.sound:
+                            pyxel.play(self.__dialog.channel, self.__dialog.sound_number)
+                    self.__frame_count += 1
+                    if self.__frame_count % self.__char_speed == 0:
+                        if self.__dialog.sound:
+                            pyxel.play(self.__dialog.channel, self.__dialog.sound_number)
+                        self.__char_index += 1
+                else:
+                    if pyxel.btnp(self.__next_key):
+                        if self.__current_line < len(self.__dialog.lines) - 1:
+                            self.__current_line += 1
+                            self.__char_index = 0
+                            self.__frame_count = 0
+                        else:
+                            self.__started = False
+                            self.__open = False
+
+        else:
+            self.__x = lerp(self.__x, self.__start_x, 0.15)
+            self.__y = lerp(self.__y, self.__start_y, 0.15)
+
+    def draw(self, camera_x:int=0, camera_y:int=0):
+        if abs(self.__x - self.__start_x) < 1 and abs(self.__y - self.__start_y) < 1:
+            return
+
+        pyxel.rect(camera_x + self.__x, camera_y + self.__y, self.__width, self.__height, self.__background_color)
+        if pyxel.frame_count % (30 * 2) < 50:
+            pyxel.text(camera_x + self.__x + self.__width - len(keys_to_representation.get(self.__next_key, "") * 4) - 1, 
+                    camera_y + self.__y + self.__height - 7, 
+                    keys_to_representation.get(self.__next_key, ""), 
+                    self.__text_colors if isinstance(self.__text_colors, int) else self.__text_colors[0])
+        if self.__border:
+            pyxel.rectb(camera_x + self.__x, camera_y + self.__y, self.__width, self.__height, self.__border_color)
+        if self.__open:
+            Text(self.__dialog.lines[self.__current_line][0], camera_x + self.__x + 2, camera_y + self.__y + 2, self.__names_colors, 1).draw()
+        if self.__dialog:
+            visible_text = self.__dialog.lines[self.__current_line][1][:self.__char_index]
+            Text(visible_text, camera_x + self.__x + 2, camera_y + self.__y + 14, self.__text_colors, 1).draw()
+
 class Bullet:
 
     def __init__(self, x:int, y:int, tx:int, ty:int):
@@ -1284,12 +1457,17 @@ class Game:
 
         #? Functions
         def play_action():
-            pyxel.play(0, 0)
-            self.pyxel_manager.change_scene_closing_doors(2, 2, 4)
+            if self.tutorial_done and not self.dialog_manager.is_dialog():
+                pyxel.play(0, 0)
+                self.pyxel_manager.change_scene_closing_doors(2, 2, 4)
+            else:
+                self.dialog_manager.start_dialog(self.dialog)
+                self.tutorial_done = True
 
         def credits_action():
-            pyxel.play(0, 0)
-            self.pyxel_manager.change_scene_closing_doors(1, 2, 4)
+            if not self.dialog_manager.is_dialog():
+                pyxel.play(0, 0)
+                self.pyxel_manager.change_scene_closing_doors(1, 2, 4)
 
         def back_action():
             pyxel.play(0, 0)
@@ -1302,6 +1480,16 @@ class Game:
         self.quit_button = Button("Quit", 114, 100, 1, 4, 6, 4, 1, True, 4, anchor=ANCHOR_TOP, command=pyxel.quit)
         self.sound_button = IconButton(2, 112, 1, 4, Sprite(0, 0, 8, 8, 8, 14), True, 4, anchor=ANCHOR_BOTTOM_LEFT, command=self.setup_music)
         self.mute_button = IconButton(2, 126, 1, 4, Sprite(0, 8, 8, 8, 8, 14), True, 4, anchor=ANCHOR_BOTTOM_LEFT, command=self.mute_music)
+
+        self.tutorial_done = False
+        self.dialog_manager = DialogManager(5, 130, 5, 126-56, 218, 56)
+        self.dialog = Dialog([("Léo", "Hey, welcome to Loop Shot !"),
+                              ("Léo", "Use W, A, S, D (or ZQSD) to move.\nYou can move in any direction,\nbut there's no escape."),
+                              ("Léo", "Aim and shoot with the mouse.\nYour bullets move fast and go\noff-screen..."),
+                              ("Léo", "...but they loop back from the\nopposite side !\nIf you're not careful, you can\nshoot yourself."),
+                              ("Léo", "Enemies come in waves and\nthey loop too.\nSome chase. Some shoot.\nAll want you gone."),
+                              ("Léo", "Survive as long as you can.\nUse the loop to your advantage..."),
+                              ("Léo", "Good Luck !")], 1, 4, 4, True, 4, True, 1, 12)
 
         #? Credits Variables
         self.credits_title = Text("Credits", 114, 10, 1, 2, ANCHOR_TOP, shadow=True, shadow_color=4, wavy=True)
@@ -1345,6 +1533,7 @@ class Game:
         self.quit_button.update()
         self.sound_button.update()
         self.mute_button.update()
+        self.dialog_manager.update()
 
     def draw_main_menu(self):
         pyxel.cls(0)
@@ -1357,6 +1546,7 @@ class Game:
         self.quit_button.draw()
         self.sound_button.draw()
         self.mute_button.draw()
+        self.dialog_manager.draw()
 
         pyxel.blt(pyxel.mouse_x, pyxel.mouse_y, 0, 0, 0, 8, 8, 14)
 
@@ -1399,6 +1589,9 @@ class Game:
 
         self.player.health_bar.draw()
         pyxel.blt(pyxel.mouse_x, pyxel.mouse_y, 0, 0, 0, 8, 8, 14)
+
+def lerp(start:float, end:float, speed:float=0.1)-> float:
+    return start + (end - start) * speed
 
 def text_size(text:str, font_size:int=1)-> tuple:
     lines = text.split("\n")

@@ -1,6 +1,6 @@
 # 🎯 Loop Shot
 
-A fast-paced wraparound arena shooter built in **72 hours** for the 2025 GMTK game jam.  
+A fast-paced wraparound arena shooter built in **96 hours** for the 2025 GMTK game jam.  
 **Theme:** `Loop`, and here, everything loops: the arena, the bullets, and your strategy.
 
 ## 📸 Preview
