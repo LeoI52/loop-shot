@@ -16,7 +16,7 @@ Shoot enemies, but beware, your bullets loop around and can hit you if you’re 
 
 You can play Loop Shot on [itch.io](https://leo-imbert.itch.io/loop-shot).
 
-### 🔄 Key Features
+## 🔄 Key Features
 - 🌀 **Wraparound Arena**: Bullets and enemies loop through screen edges.
 - 👾 **Three Unique Enemies**:
   - **Scarab**: Chaser that uses smart wrapping.
