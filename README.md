@@ -37,7 +37,7 @@ You can play Loop Shot on [itch.io](https://leo-imbert.itch.io/loop-shot).
 
 - [Pyxel](https://github.com/kitao/pyxel) – Retro game engine in Python.
 - Python 3.10+
-- Pure pixel art assets created during the jam.
+- Huge thank's for the pixel art to [MattWalkden](https://mattwalkden.itch.io/free-robot-warfare-pack).
 
 ## 📄 License
 
