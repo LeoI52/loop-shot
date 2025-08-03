@@ -1,7 +1,7 @@
 """
 @author : Léo Imbert
 @created : 31/07/2025 10:18
-@updated : 02/08/2025 12:16
+@updated : 03/08/2025 08:15
 
 * Sounds :
 0. Button click
@@ -1455,7 +1455,7 @@ class Game:
         scenes = [main_menu_scene, credits_scene, game_scene]
 
         #? Pyxel Init
-        self.pyxel_manager = PyxelManager(228, 128, scenes, 0, 60, True, quit_key=pyxel.KEY_NONE)
+        self.pyxel_manager = PyxelManager(228, 128, scenes, 0, 60, quit_key=pyxel.KEY_NONE)
         pyxel.channels.from_list([pyxel.Channel() for _ in range(7)])
         self.setup_music()
 
@@ -1487,13 +1487,13 @@ class Game:
 
         self.tutorial_done = False
         self.dialog_manager = DialogManager(5, 130, 5, 126-56, 218, 56)
-        self.dialog = Dialog([("Léo", "Hey, welcome to Loop Shot !"),
-                              ("Léo", "Use W, A, S, D (or ZQSD) to move.\nYou can move in any direction,\nbut there's no escape."),
-                              ("Léo", "Aim and shoot with the mouse.\nYour bullets move fast and go\noff-screen..."),
-                              ("Léo", "...but they loop back from the\nopposite side !\nIf you're not careful, you can\nshoot yourself."),
-                              ("Léo", "Enemies come in waves and\nthey loop too.\nSome chase. Some shoot.\nAll want you gone."),
-                              ("Léo", "Survive as long as you can.\nUse the loop to your advantage..."),
-                              ("Léo", "Good Luck !")], 1, 4, 4, True, 4, True, 1, 12)
+        self.dialog = Dialog([("Game Creator", "Hey, welcome to Loop Shot !"),
+                              ("Game Creator", "Use W, A, S, D (or ZQSD) to move.\nYou can move in any direction,\nbut there's no escape."),
+                              ("Game Creator", "Aim and shoot with the mouse.\nYour bullets move fast and go\noff-screen..."),
+                              ("Game Creator", "...but they loop back from the\nopposite side !\nIf you're not careful, you can\nshoot yourself."),
+                              ("Game Creator", "Enemies come in waves and\nthey loop too.\nSome chase. Some shoot.\nAll want you gone."),
+                              ("Game Creator", "Survive as long as you can.\nUse the loop to your advantage..."),
+                              ("Game Creator", "Good Luck !")], 1, 4, 4, True, 4, True, 1, 12)
 
         #? Credits Variables
         self.credits_title = Text("Credits", 114, 10, 1, 2, ANCHOR_TOP, shadow=True, shadow_color=4, wavy=True)
