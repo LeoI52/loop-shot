@@ -1,7 +1,7 @@
 """
 @author : Léo Imbert
 @created : 31/07/2025 10:18
-@updated : 03/08/2025 08:15
+@updated : 27/09/2025
 
 * Sounds :
 0. Button click
@@ -1388,6 +1388,7 @@ class WaveManager:
         self.enemies = []
         self.explosions = []
         self.win = False
+        self.indicator_color = 9
 
     def update(self, player:Player):
         if not player.hit and not player.dead:
@@ -1422,6 +1423,7 @@ class WaveManager:
                 if self.wave >= len(self.waves):
                     self.win = True
             self.transition_timer -= 1
+            self.indicator_color = 11 if self.transition_timer <= 60 else 10 if self.transition_timer <= 120 else 9
 
         if self.transition_timer <= 0:
             self.transition_timer = 180
@@ -1440,6 +1442,12 @@ class WaveManager:
             pyxel.text(2, 10, f"Wave:{self.wave + 1}", 1)
 
         if 0 < self.transition_timer < 180 and len(self.enemies) == 0 and self.wave < len(self.waves):
+            if pyxel.frame_count % 60 < 30:
+                for enemy in self.waves[self.wave]:
+                    if isinstance(enemy, Spider): s = 16
+                    elif isinstance(enemy, Scarab): s = 8
+                    else: s = 12
+                    pyxel.elli(enemy.x, enemy.y, s, s / 2, self.indicator_color)
             Text(f"Wave {self.wave + 1} loading...", 114, 64, 1, 1, ANCHOR_CENTER, shadow=True, shadow_color=4).draw()
         if self.win:
             Text("You won !", 114, 64, 1, 2, ANCHOR_CENTER, shadow=True, shadow_color=4).draw()
@@ -1463,7 +1471,7 @@ class Game:
         def play_action():
             if self.tutorial_done and not self.dialog_manager.is_dialog():
                 pyxel.play(0, 0)
-                self.pyxel_manager.change_scene_closing_doors(2, 2, 4)
+                self.pyxel_manager.change_scene_closing_doors(2, 4, 4)
             else:
                 self.dialog_manager.start_dialog(self.dialog)
                 self.tutorial_done = True
@@ -1471,11 +1479,11 @@ class Game:
         def credits_action():
             if not self.dialog_manager.is_dialog():
                 pyxel.play(0, 0)
-                self.pyxel_manager.change_scene_closing_doors(1, 2, 4)
+                self.pyxel_manager.change_scene_closing_doors(1, 4, 4)
 
         def back_action():
             pyxel.play(0, 0)
-            self.pyxel_manager.change_scene_closing_doors(0, 2, 4)
+            self.pyxel_manager.change_scene_closing_doors(0, 4, 4)
 
         #? Main Menu Variables
         self.title = Text("Loop\nShot", 114, 10, 1, 2, ANCHOR_TOP, shadow=True, shadow_color=4, wavy=True)
@@ -1578,14 +1586,14 @@ class Game:
 
         if pyxel.btnp(pyxel.KEY_ESCAPE):
             pyxel.play(0, 0)
-            self.pyxel_manager.change_scene_closing_doors(0, 2, 4)
+            self.pyxel_manager.change_scene_closing_doors(0, 4, 4)
 
     def draw_game(self):
         pyxel.cls(6)
         pyxel.bltm(0, 0, 0, self.tlm_u, self.tlm_v, 228, 128, 0)
 
         if self.player.dead and self.player.current_animation.is_finished():
-            self.pyxel_manager.change_scene_closing_doors(0, 2, 4)
+            self.pyxel_manager.change_scene_closing_doors(0, 4, 4)
             self.player.current_animation = Animation(Sprite(0, 64, 80, 16, 16, 14), 1, 20)
 
         self.player.draw()
